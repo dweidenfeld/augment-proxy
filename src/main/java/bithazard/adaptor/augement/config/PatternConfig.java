@@ -17,6 +17,8 @@ public final class PatternConfig {
     private final Pattern urlPattern;
     private final boolean setNoFollow;
     private final boolean setCrawlOnce;
+    private final boolean setNoArchive;
+    private final boolean setNoIndex;
     private final boolean sortParameters;
     private final boolean executeJavascript;
     private final boolean passGsaHeaders;
@@ -34,6 +36,8 @@ public final class PatternConfig {
         this.urlPattern = builder.urlPattern;
         this.setNoFollow = builder.setNoFollow;
         this.setCrawlOnce = builder.setCrawlOnce;
+        this.setNoArchive = builder.setNoArchive;
+        this.setNoIndex = builder.setNoIndex;
         this.sortParameters = builder.sortParameters;
         this.executeJavascript = builder.executeJavascript;
         this.passGsaHeaders = builder.passGsaHeaders;
@@ -58,6 +62,14 @@ public final class PatternConfig {
 
     public boolean isSetCrawlOnce() {
         return setCrawlOnce;
+    }
+
+    public boolean isSetNoArchive() {
+        return setNoArchive;
+    }
+
+    public boolean isSetNoIndex() {
+        return setNoIndex;
     }
 
     public boolean isSortParameters() {
@@ -112,6 +124,8 @@ public final class PatternConfig {
         private Pattern urlPattern;
         private boolean setNoFollow = false;
         private boolean setCrawlOnce = false;
+        private boolean setNoArchive = false;
+        private boolean setNoIndex = false;
         private boolean sortParameters = false;
         private boolean executeJavascript = false;
         private boolean passGsaHeaders = false;
@@ -145,6 +159,16 @@ public final class PatternConfig {
 
         public Builder setCrawlOnce(boolean crawlOnce) {
             this.setCrawlOnce = crawlOnce;
+            return this;
+        }
+
+        public Builder setNoArchive(boolean noArchive) {
+            this.setNoArchive = noArchive;
+            return this;
+        }
+
+        public Builder setNoIndex(boolean noIndex) {
+            this.setNoIndex = noIndex;
             return this;
         }
 

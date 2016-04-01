@@ -50,12 +50,18 @@ public class HttpHeaderHelper {
         }
     };
 
-    public static void setHeaders(Response response, boolean noFollow, boolean crawlOnce) {
+    public static void setHeaders(Response response, boolean noFollow, boolean crawlOnce, boolean noArchive, boolean noIndex) {
         if (noFollow) {
             response.setNoFollow(true);
         }
         if (crawlOnce) {
             response.setCrawlOnce(true);
+        }
+        if (noArchive) {
+            response.setNoArchive(true);
+        }
+        if (noIndex) {
+            response.setNoIndex(true);
         }
     }
 

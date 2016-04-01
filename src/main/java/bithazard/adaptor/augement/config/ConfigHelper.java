@@ -111,6 +111,14 @@ public final class ConfigHelper {
                 if (setCrawlOnce != null) {
                     patternConfigBuilder.setCrawlOnce(setCrawlOnce);
                 }
+                Boolean setNoArchive = (Boolean) augmentConfigJsonObject.get("setNoArchive");
+                if (setNoArchive != null) {
+                    patternConfigBuilder.setNoArchive(setNoArchive);
+                }
+                Boolean setNoIndex = (Boolean) augmentConfigJsonObject.get("setNoIndex");
+                if (setNoIndex != null) {
+                    patternConfigBuilder.setNoIndex(setNoIndex);
+                }
                 Boolean sortParameters = (Boolean) augmentConfigJsonObject.get("sortParameters");
                 if (sortParameters != null) {
                     patternConfigBuilder.sortParameters(sortParameters);

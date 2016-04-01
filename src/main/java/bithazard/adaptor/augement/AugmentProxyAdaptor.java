@@ -167,7 +167,8 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
                     HttpHeaderHelper.transferGsaHeadersToResponse(headers, response);
                 }
                 HttpHeaderHelper.convertHeadersToMetadata(response, headers, config.getHeadersToMetadata());
-                HttpHeaderHelper.setHeaders(response, config.isSetNoFollow(), config.isSetCrawlOnce());
+                HttpHeaderHelper.setHeaders(response, config.isSetNoFollow(), config.isSetCrawlOnce(),
+                        config.isSetNoArchive(), config.isSetNoIndex());
 
                 addSitemapMetadata(response, adaptorConfig.getSitemapConfig(), requestUrl);
 
