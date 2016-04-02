@@ -167,17 +167,26 @@ public final class ConfigHelper {
                 if (imageLinksToPdf != null) {
                     Long minWidth = ((Long) imageLinksToPdf.get("minWidth"));
                     if (minWidth == null) {
-                        minWidth = (long) Integer.MAX_VALUE;
+                        minWidth = 0L;
                     }
                     Long minHeight = (Long) imageLinksToPdf.get("minHeight");
                     if (minHeight == null) {
-                        minHeight = (long) Integer.MAX_VALUE;
+                        minHeight = 0L;
                     }
                     Boolean addSurroundingText = (Boolean) imageLinksToPdf.get("addSurroundingText");
                     if (addSurroundingText == null) {
                         addSurroundingText = false;
                     }
-                    patternConfigBuilder.imageLinkConfig(new ImageLinkConfig(minWidth.intValue(), minHeight.intValue(), addSurroundingText));
+                    Long surroundingTextMinLength = ((Long) imageLinksToPdf.get("surroundingTextMinLength"));
+                    if (surroundingTextMinLength == null) {
+                        surroundingTextMinLength = 5L;
+                    }
+                    Long surroundingTextMaxLength = (Long) imageLinksToPdf.get("surroundingTextMaxLength");
+                    if (surroundingTextMaxLength == null) {
+                        surroundingTextMaxLength = 500L;
+                    }
+                    patternConfigBuilder.imageLinkConfig(new ImageLinkConfig(minWidth.intValue(), minHeight.intValue(),
+                            addSurroundingText, surroundingTextMinLength.intValue(), surroundingTextMaxLength.intValue()));
                 }
                 JSONArray extractConfig = (JSONArray) augmentConfigJsonObject.get("extract");
                 if (extractConfig != null) {

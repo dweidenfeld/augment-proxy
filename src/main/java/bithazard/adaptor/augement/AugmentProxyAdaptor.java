@@ -196,7 +196,7 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
                 }
                 assert content != null;
                 if (config.getExcludeCssSelectors().size() > 0 || config.getExtractConfigs().size() > 0 || config.isSortParameters()
-                        || config.getRemoveParameters().size() > 0) {
+                        || config.getRemoveParameters().size() > 0 || config.getImageLinkConfig() != null) {
                     Document document = Jsoup.parse(content);
                     ExtractHelper.excludeContent(document, config.getExcludeCssSelectors());
                     ExtractHelper.extractContent(response, document, requestUrl, config.getExtractConfigs());

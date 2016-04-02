@@ -35,6 +35,7 @@ public class HttpContentSource implements ContentSource {
     public Status retrieveContent(final String requestUrl) throws IOException {
         Connection connection = Jsoup.connect(requestUrl);
         connection.userAgent(config.getUserAgent());
+        connection.timeout(15000);
         connection.ignoreContentType(true);
         for (Map.Entry<String, String> requestHttpHeader : config.getRequestHeaders().entrySet()) {
             connection.header(requestHttpHeader.getKey(), requestHttpHeader.getValue());

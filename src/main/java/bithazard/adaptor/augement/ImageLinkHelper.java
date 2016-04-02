@@ -25,59 +25,68 @@ public class ImageLinkHelper {
     }
 
     public static void addImageLinksAsPdf(final Document document, final ImageLinkConfig imageLinkConfig) {
+        StringBuilder imageLinks = new StringBuilder("<!--googleoff: index--><!--googleoff: snippet-->");
         Elements images = document.select("img");
         for (Element image : images) {
-            String imageUrl = image.attr("href");
+            String imageUrl = image.attr("src");
             if (imageUrl.isEmpty()) {
                 continue;
             }
-            String pdfUrl = getPdfUrl(imageUrl);
-            Element pdfLink = image.after("<!--googleoff: index--><!--googleoff: snippet--><a href=\"" + pdfUrl
-                    + "\"></a>\n<!--googleon: snippet-->\n<!--googleon: index-->");
-            StringBuilder surroundingText = new StringBuilder(image.attr("alt"));
+            StringBuilder searchKeywords = new StringBuilder(image.attr("alt"));
             if (imageLinkConfig.isAddSurroundingText()) {
-                appendSurroundingText(image, surroundingText);
+                String surroundingText = getSurroundingText(image, imageLinkConfig.getSurroundingTextMinLength());
+                if (!surroundingText.equals(searchKeywords.toString())
+                        && surroundingText.length() <= imageLinkConfig.getSurroundingTextMaxLength()) {
+                    searchKeywords.append(" ").append(surroundingText);
+                }
             }
-            pdfLink.text(surroundingText.toString());
+            String pdfUrl = getPdfUrl(imageUrl);
+            imageLinks.append("<a href=\"").append(pdfUrl).append("\">").append(searchKeywords.toString()).append("</a>");
         }
+        imageLinks.append("\n<!--googleon: snippet-->\n<!--googleon: index-->");
+        document.body().append(imageLinks.toString());
     }
 
-    private static void appendSurroundingText(final Element image, final StringBuilder surroundingText) {
+    private static String getSurroundingText(final Element image, final int surroundingTextMinLength) {
         Node nextNode = image;
         Node previousNode = image;
-        boolean textAppended = false;
-        while (!textAppended) {
-            nextNode = nextNode.nextSibling();
+        while (nextNode != null && previousNode != null) {
+            Node nextSiblingPeek = nextNode.nextSibling();
+            if (nextSiblingPeek != null) {
+                nextNode = nextSiblingPeek;
+            } else {
+                nextNode = nextNode.parent();
+            }
             if (nextNode instanceof TextNode) {
-                String text = ((TextNode) nextNode).text();
-                if (!text.isEmpty()) {
-                    surroundingText.append(" ").append(text);
-                    textAppended = true;
+                String text = ((TextNode) nextNode).text().replaceAll("\u00a0", " ").trim();
+                if (!text.isEmpty() && text.length() >= surroundingTextMinLength) {
+                    return text;
                 }
             } else if (nextNode instanceof Element) {
-                String text = ((Element) nextNode).text();
-                if (!text.isEmpty()) {
-                    surroundingText.append(" ").append(text);
-                    textAppended = true;
+                String text = ((Element) nextNode).text().replaceAll("\u00a0", " ").trim();
+                if (!text.isEmpty() && text.length() >= surroundingTextMinLength) {
+                    return text;
                 }
             }
-            if (!textAppended) {
-                previousNode = previousNode.previousSibling();
-                if (previousNode instanceof TextNode) {
-                    String text = ((TextNode) previousNode).text();
-                    if (!text.isEmpty()) {
-                        surroundingText.append(" ").append(text);
-                        textAppended = true;
-                    }
-                } else if (previousNode instanceof Element) {
-                    String text = ((Element) previousNode).text();
-                    if (!text.isEmpty()) {
-                        surroundingText.append(" ").append(text);
-                        textAppended = true;
-                    }
+            Node previousSiblingPeek = previousNode.previousSibling();
+            if (previousSiblingPeek != null) {
+                previousNode = previousSiblingPeek;
+            } else {
+                previousNode = previousNode.parent();
+            }
+            if (previousNode instanceof TextNode) {
+                String text = ((TextNode) previousNode).text().replaceAll("\u00a0", " ").trim();
+                if (!text.isEmpty() && text.length() >= surroundingTextMinLength) {
+                    return text;
+                }
+            } else if (previousNode instanceof Element) {
+                String text = ((Element) previousNode).text().replaceAll("\u00a0", " ").trim();
+                if (!text.isEmpty() && text.length() >= surroundingTextMinLength) {
+                    return text;
                 }
             }
         }
+        return "";
     }
 
     private static String getPdfUrl(final String imageUrl) {
