@@ -91,7 +91,7 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
         String adaptorConfigFilename = config.getValue(ADAPTOR_CONFIG);
         try {
             this.adaptorConfig = ConfigHelper.parseAdaptorConfig(adaptorConfigFilename);
-        } catch (AugmentConfigException | IllegalArgumentException ex) {
+        } catch (AugmentConfigException ex) {
             throw new StartupException(ex);
         }
         if (adaptorConfig.getSitemapConfig().size() > 0) {
@@ -139,6 +139,7 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
     @Override
     public void getDocContent(Request request, Response response) throws IOException, InterruptedException {
         String requestUrl = request.getDocId().getUniqueId();
+        LOGGER.fine("Processing request for URL " + requestUrl);
         for (PatternConfig config : patternConfigs) {
             if (config.getUrlPattern().matcher(requestUrl).matches()) {
                 ContentSource contentSource;
@@ -174,20 +175,15 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
 
                 if (status == ContentSource.Status.BINARY_CONTENT) {
                     ImageLinkConfig imageLinkConfig = config.getImageLinkConfig();
-                    if (requestUrl.contains(ImageLinkHelper.CONVERT_TO_PDF_PARAMETER) && imageLinkConfig != null) {
+                    if (imageLinkConfig != null && requestUrl.contains(ImageLinkHelper.CONVERT_TO_PDF_PARAMETER)) {
                         BufferedImage image = contentSource.getContentAsImage();
                         if (image.getWidth() < imageLinkConfig.getMinWidth() || image.getHeight() < imageLinkConfig.getMinHeight()) {
                             response.respondNotFound();
                             return;
                         }
                         response.setContentType("application/pdf");
-                        URI originalUrl = ImageLinkHelper.getOriginalUrl(requestUrl);
-                        response.setDisplayUrl(originalUrl);
-                        response.addMetadata("imageHeight", image.getHeight() + "");
-                        response.addMetadata("imageWidth", image.getWidth() + "");
-                        response.addMetadata("numberOfPixels", image.getWidth() * image.getHeight() + "");
-                        response.addMetadata("transparency", image.getColorModel().hasAlpha() + "");
-                        response.addMetadata("colorDepth", image.getColorModel().getPixelSize() + "");
+                        ImageLinkHelper.setDisplayUrl(response, requestUrl);
+                        ImageLinkHelper.addImageMetadata(response, image);
                         contentSource.writeImageAsPdf(image, response.getOutputStream());
                     } else {
                         contentSource.writeContent(response.getOutputStream());

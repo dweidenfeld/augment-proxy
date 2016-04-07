@@ -99,6 +99,8 @@ The extract property is the most complex but also the most powerful property. In
         "urlPattern": "http://www.example.com/.*",
         "setNoFollow": true,
         "setCrawlOnce": true,
+        "setNoArchive": true,
+        "setNoIndex": true,
         "sortParameters": true,
         "passGsaHeaders": true,
         "executeJavascript": true,

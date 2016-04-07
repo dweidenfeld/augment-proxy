@@ -35,7 +35,7 @@ public final class ConfigHelper {
                     JSONObject sitemapConfigObject = (JSONObject) sitemapConfig;
                     String sitemapUrl = (String) sitemapConfigObject.get("url");
                     if (sitemapUrl == null) {
-                        throw new AugmentConfigException("Sitemap config must at least have an URL.");
+                        throw new AugmentConfigException("Sitemap config must at least have a URL.");
                     }
                     Boolean addMetadata = (Boolean) sitemapConfigObject.get("addMetadata");
                     if (addMetadata == null) {
@@ -56,7 +56,7 @@ public final class ConfigHelper {
                     JSONObject rssConfigObject = (JSONObject) rssConfig;
                     String rssUrl = (String) rssConfigObject.get("url");
                     if (rssUrl == null) {
-                        throw new AugmentConfigException("RSS config must at least have an URL.");
+                        throw new AugmentConfigException("RSS config must at least have a URL.");
                     }
                     Boolean addMetadata = (Boolean) rssConfigObject.get("addMetadata");
                     if (addMetadata == null) {
@@ -77,7 +77,7 @@ public final class ConfigHelper {
                     JSONObject atomConfigObject = (JSONObject) atomConfig;
                     String atomUrl = (String) atomConfigObject.get("url");
                     if (atomUrl == null) {
-                        throw new AugmentConfigException("Atom config must at least have an URL.");
+                        throw new AugmentConfigException("Atom config must at least have a URL.");
                     }
                     Boolean addMetadata = (Boolean) atomConfigObject.get("addMetadata");
                     if (addMetadata == null) {

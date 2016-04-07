@@ -61,9 +61,7 @@ public class BrowserContentSource implements ContentSource {
 
     @Override
     public Map<String, String> getHeaders() {
-        if (page == null) {
-            throw new IllegalStateException("Call retrieveContent before calling this method.");
-        }
+        ensureRetrieveContentCalled();
         //Content-Length, Content-Encoding and Content-MD5 headers are removed in ResponseContentEncoding
         //(Apache httpclient) when content is compressed. These headers cannot be returned here.
         List<NameValuePair> responseHeaders = page.getWebResponse().getResponseHeaders();
@@ -72,9 +70,7 @@ public class BrowserContentSource implements ContentSource {
 
     @Override
     public String getContentAsString() {
-        if (page == null) {
-            throw new IllegalStateException("Call retrieveContent before calling this method.");
-        }
+        ensureRetrieveContentCalled();
         String htmlContent;
         if (page instanceof HtmlPage) {
             htmlContent = ((HtmlPage) page).asXml();
@@ -87,9 +83,7 @@ public class BrowserContentSource implements ContentSource {
 
     @Override
     public void writeContent(final OutputStream outputStream) throws IOException {
-        if (page == null) {
-            throw new IllegalStateException("Call retrieveContent before calling this method.");
-        }
+        ensureRetrieveContentCalled();
         try (InputStream contentAsStream = page.getWebResponse().getContentAsStream()) {
             IOUtils.copy(contentAsStream, outputStream);
         }
@@ -97,11 +91,13 @@ public class BrowserContentSource implements ContentSource {
 
     @Override
     public BufferedImage getContentAsImage() throws IOException {
+        ensureRetrieveContentCalled();
         return ImageIO.read(page.getWebResponse().getContentAsStream());
     }
 
     @Override
     public void writeImageAsPdf(final BufferedImage image, final OutputStream outputStream) throws IOException {
+        ensureRetrieveContentCalled();
         PDDocument pdDocument  = new PDDocument();
         PDImageXObject pdImageXObject;
         String contentTypeLowerCase = page.getWebResponse().getContentType().toLowerCase(Locale.ENGLISH);
@@ -119,6 +115,12 @@ public class BrowserContentSource implements ContentSource {
         pdPageContentStream.close();
         pdDocument.save(outputStream);
         pdDocument.close();
+    }
+
+    private void ensureRetrieveContentCalled() {
+        if (page == null) {
+            throw new IllegalStateException("Call retrieveContent before calling this method.");
+        }
     }
 
     private static BrowserVersion getBrowserVersion(String userAgent) {

@@ -142,7 +142,7 @@ public final class PatternConfig {
         public Builder(String urlPattern) {
             if (urlPattern == null) {
                 throw new AugmentConfigException("Missing configuration value in augment config: You must at least "
-                        + "specify an URL pattern.");
+                        + "specify a URL pattern.");
             }
             this.urlPattern = Pattern.compile(urlPattern);
         }

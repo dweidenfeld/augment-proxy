@@ -26,119 +26,161 @@ public final class ExtractHelper {
     private static final Logger LOGGER = Logger.getLogger(ExtractHelper.class.getName());
     private static final String SKIP_METADATA_NAME = "_";
 
+    public static void excludeContent(Document document, Set<String> excludeCssSelectors) {
+        for (String excludeCssSelector : excludeCssSelectors) {
+            Elements excludeElement = document.select(excludeCssSelector);
+            excludeElement.before("<!--googleoff: index--><!--googleoff: snippet-->");
+            excludeElement.after("\n<!--googleon: snippet-->\n<!--googleon: index-->");
+        }
+    }
+
     public static void extractContent(Response response, Document document, String requestUrl, List<ExtractConfig> extractConfigs) {
         Map<String, Elements> cssCache = new HashMap<>();
         for (ExtractConfig extractConfig : extractConfigs) {
-            List<String> regexResults = new ArrayList<>();
-            switch (extractConfig.getScope()) {
-                case URL: {
-                    Matcher matcher = extractConfig.getRegexFind().matcher(requestUrl);
-                    addRegexResult(regexResults, matcher, extractConfig.getRegexReplace());
-                    break;
-                }
-                case CONTENT: {
-                    String cssSelector = extractConfig.getCssSelector();
-                    if (cssSelector == null) {
+            List<String> regexResults = getRegexResults(document, requestUrl, cssCache, extractConfig);
+            processRegexResults(response, document, requestUrl, extractConfig, regexResults);
+        }
+    }
+
+    private static List<String> getRegexResults(final Document document, final String requestUrl, final Map<String, Elements> cssCache,
+                                                final ExtractConfig extractConfig) {
+        List<String> regexResults = new ArrayList<>();
+        switch (extractConfig.getScope()) {
+            case URL: {
+                Matcher matcher = extractConfig.getRegexFind().matcher(requestUrl);
+                String regexResult = getRegexResult(matcher, extractConfig.getRegexReplace());
+                LOGGER.fine("(" + requestUrl + ") Regex result from URL: " + regexResult);
+                regexResults.add(regexResult);
+                break;
+            }
+            case CONTENT: {
+                String cssSelector = extractConfig.getCssSelector();
+                if (cssSelector == null) {
+                    String elementContent;
+                    if (extractConfig.getRegexMatch() == ExtractConfig.RegexMatch.TEXT) {
+                        elementContent = document.text();
+                    } else {
+                        elementContent = document.html();
+                    }
+                    Matcher matcher = extractConfig.getRegexFind().matcher(elementContent);
+                    String regexResult = getRegexResult(matcher, extractConfig.getRegexReplace());
+                    LOGGER.fine("(" + requestUrl + ") Regex result from content: " + regexResult);
+                    regexResults.add(regexResult);
+                } else {
+                    Elements elements = cssCache.get(cssSelector);
+                    if (elements == null) {
+                        elements = document.select(cssSelector);
+                        cssCache.put(cssSelector, elements);
+                    }
+                    for (Element element : elements) {
                         String elementContent;
                         if (extractConfig.getRegexMatch() == ExtractConfig.RegexMatch.TEXT) {
-                            elementContent = document.text();
+                            elementContent = element.text();
                         } else {
-                            elementContent = document.html();
+                            elementContent = element.html();
                         }
                         Matcher matcher = extractConfig.getRegexFind().matcher(elementContent);
-                        addRegexResult(regexResults, matcher, extractConfig.getRegexReplace());
-                    } else {
-                        Elements elements = cssCache.get(cssSelector);
-                        if (elements == null) {
-                            elements = document.select(cssSelector);
-                            cssCache.put(cssSelector, elements);
-                        }
-                        for (Element element : elements) {
-                            String elementContent;
-                            if (extractConfig.getRegexMatch() == ExtractConfig.RegexMatch.TEXT) {
-                                elementContent = element.text();
-                            } else {
-                                elementContent = element.html();
-                            }
-                            Matcher matcher = extractConfig.getRegexFind().matcher(elementContent);
-                            addRegexResult(regexResults, matcher, extractConfig.getRegexReplace());
-                        }
+                        String regexResult = getRegexResult(matcher, extractConfig.getRegexReplace());
+                        LOGGER.fine("(" + requestUrl + ") Regex result from content: " + regexResult);
+                        regexResults.add(regexResult);
                     }
-                    break;
                 }
+                break;
             }
-            switch (extractConfig.getTarget()) {
-                case TITLE: {
-                    String title = regexResults.get(extractConfig.getTitleCssElement());
-                    if (title != null) {
-                        document.title(title);
-                    }
-                    break;
+        }
+        return regexResults;
+    }
+
+    private static void processRegexResults(final Response response, final Document document, final String requestUrl,
+                                            final ExtractConfig extractConfig, final List<String> regexResults) {
+        switch (extractConfig.getTarget()) {
+            case TITLE: {
+                String title = regexResults.get(extractConfig.getTitleCssElement());
+                if (title != null) {
+                    document.title(title);
+                } else {
+                    LOGGER.warning("(" + requestUrl + ") Regex result for title was null. Not setting title.");
                 }
-                case METADATA: {
-                    for (int i = 0; i < regexResults.size(); i++) {
-                        if (i >= extractConfig.getMetadataNames().size()) {
-                            break;
-                        }
-                        String metadataName = extractConfig.getMetadataNames().get(i);
-                        if (SKIP_METADATA_NAME.equals(metadataName)) {
-                            continue;
-                        }
-                        String metadataValue = regexResults.get(i);
-                        if (metadataValue != null) {
-                            response.addMetadata(metadataName, metadataValue);
-                        }
+                break;
+            }
+            case METADATA: {
+                for (int i = 0; i < regexResults.size(); i++) {
+                    if (i >= extractConfig.getMetadataNames().size()) {
+                        break;
                     }
-                    break;
+                    String metadataName = extractConfig.getMetadataNames().get(i);
+                    if (SKIP_METADATA_NAME.equals(metadataName)) {
+                        continue;
+                    }
+                    String metadataValue = regexResults.get(i);
+                    if (metadataValue != null) {
+                        response.addMetadata(metadataName, metadataValue);
+                    } else {
+                        LOGGER.warning("(" + requestUrl + ") Regex result for metadata was null. Not adding metadata.");
+                    }
                 }
-                case LINK: {
-                    for (String regexResult : regexResults) {
-                        try {
+                break;
+            }
+            case LINK: {
+                for (String regexResult : regexResults) {
+                    try {
+                        if (regexResult != null) {
                             response.addAnchor(new URI(regexResult), null);
-                        } catch (URISyntaxException e) {
-                            LOGGER.warning("Invalid extracted URL: " + regexResult + " for request URL " + requestUrl);
+                        } else {
+                            LOGGER.warning("(" + requestUrl + ") Regex result for link was null. Not adding link.");
                         }
+                    } catch (URISyntaxException e) {
+                        LOGGER.warning("(" + requestUrl + ") Regex result for link was an invalid URL (" +regexResult
+                                + "). Not adding link.");
                     }
-                    break;
                 }
-                case ACL_USER: {
-                    Acl.Builder aclBuilder = new Acl.Builder();
-                    List<UserPrincipal> userPrincipals = new ArrayList<>();
-                    for (String regexResult : regexResults) {
+                break;
+            }
+            case ACL_USER: {
+                Acl.Builder aclBuilder = new Acl.Builder();
+                List<UserPrincipal> userPrincipals = new ArrayList<>();
+                for (String regexResult : regexResults) {
+                    if (regexResult != null) {
                         userPrincipals.add(new UserPrincipal(regexResult));
+                    } else {
+                        LOGGER.warning("(" + requestUrl + ") Regex result for ACL user was null. Not adding ACL user.");
                     }
-                    aclBuilder.setPermitUsers(userPrincipals);
-                    aclBuilder.setEverythingCaseInsensitive();
-                    response.setAcl(aclBuilder.build());
-                    break;
                 }
-                case ACL_GROUP: {
-                    Acl.Builder aclBuilder = new Acl.Builder();
-                    List<GroupPrincipal> groupPrincipals = new ArrayList<>();
-                    for (String regexResult : regexResults) {
+                aclBuilder.setPermitUsers(userPrincipals);
+                aclBuilder.setEverythingCaseInsensitive();
+                response.setAcl(aclBuilder.build());
+                break;
+            }
+            case ACL_GROUP: {
+                Acl.Builder aclBuilder = new Acl.Builder();
+                List<GroupPrincipal> groupPrincipals = new ArrayList<>();
+                for (String regexResult : regexResults) {
+                    if (regexResult != null) {
                         groupPrincipals.add(new GroupPrincipal(regexResult));
+                    } else {
+                        LOGGER.warning("(" + requestUrl + ") Regex result for ACL group was null. Not adding ACL group.");
                     }
-                    aclBuilder.setPermitGroups(groupPrincipals);
-                    aclBuilder.setEverythingCaseInsensitive();
-                    response.setAcl(aclBuilder.build());
-                    break;
                 }
+                aclBuilder.setPermitGroups(groupPrincipals);
+                aclBuilder.setEverythingCaseInsensitive();
+                response.setAcl(aclBuilder.build());
+                break;
             }
         }
     }
 
-    private static void addRegexResult(List<String> regexResults, Matcher matcher, String regexReplace) {
+    private static String getRegexResult(Matcher matcher, String regexReplace) {
         if (regexReplace == null) {
             if (matcher.find()) {
-                regexResults.add(matcher.group());
+                return matcher.group();
             } else {
-                regexResults.add(null);
+                return null;
             }
         } else {
             if (matcher.find()) {
-                regexResults.add(matcher.replaceAll(regexReplace));
+                return matcher.replaceAll(regexReplace);
             } else {
-                regexResults.add(null);
+                return null;
             }
         }
     }
@@ -228,14 +270,6 @@ public final class ExtractHelper {
             sortedParameters.append(parameter).append("&");
         }
         return sortedParameters.substring(0, sortedParameters.length() - 2);
-    }
-
-    public static void excludeContent(Document document, Set<String> excludeCssSelectors) {
-        for (String excludeCssSelector : excludeCssSelectors) {
-            Elements excludeElement = document.select(excludeCssSelector);
-            excludeElement.before("<!--googleoff: index--><!--googleoff: snippet-->");
-            excludeElement.after("\n<!--googleon: snippet-->\n<!--googleon: index-->");
-        }
     }
 
     private static boolean matchesAnyPattern(String string, Set<Pattern> patterns) {

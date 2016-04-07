@@ -56,35 +56,31 @@ public class HttpContentSource implements ContentSource {
 
     @Override
     public Map<String, String> getHeaders() {
-        if (connectionResponse == null) {
-            throw new IllegalStateException("Call retrieveContent before calling this method.");
-        }
+        ensureRetrieveContentCalled();
         return connectionResponse.headers();
     }
 
     @Override
     public String getContentAsString() {
-        if (connectionResponse == null) {
-            throw new IllegalStateException("Call retrieveContent before calling this method.");
-        }
+        ensureRetrieveContentCalled();
         return connectionResponse.body();
     }
 
     @Override
     public void writeContent(final OutputStream outputStream) throws IOException {
-        if (connectionResponse == null) {
-            throw new IllegalStateException("Call retrieveContent before calling this method.");
-        }
+        ensureRetrieveContentCalled();
         IOUtils.write(connectionResponse.bodyAsBytes(), outputStream);
     }
 
     @Override
     public BufferedImage getContentAsImage() throws IOException {
+        ensureRetrieveContentCalled();
         return ImageIO.read(new ByteArrayInputStream(connectionResponse.bodyAsBytes()));
     }
 
     @Override
     public void writeImageAsPdf(final BufferedImage image, final OutputStream outputStream) throws IOException {
+        ensureRetrieveContentCalled();
         PDDocument pdDocument  = new PDDocument();
         PDImageXObject pdImageXObject;
         String contentTypeLowerCase = connectionResponse.contentType().toLowerCase(Locale.ENGLISH);
@@ -102,5 +98,11 @@ public class HttpContentSource implements ContentSource {
         pdPageContentStream.close();
         pdDocument.save(outputStream);
         pdDocument.close();
+    }
+
+    private void ensureRetrieveContentCalled() {
+        if (connectionResponse == null) {
+            throw new IllegalStateException("Call retrieveContent before calling this method.");
+        }
     }
 }

@@ -1,18 +1,20 @@
 package bithazard.adaptor.augement;
 
 import bithazard.adaptor.augement.config.ImageLinkConfig;
+import com.google.enterprise.adaptor.Response;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 
+import java.awt.image.BufferedImage;
 import java.net.URI;
 
 public class ImageLinkHelper {
     public static final String CONVERT_TO_PDF_PARAMETER = "convert2pdf=true";
 
-    public static URI getOriginalUrl(final String url) {
+    public static void setDisplayUrl(final Response response, final String url) {
         String originalUrl = url;
         if (url.contains("?" + CONVERT_TO_PDF_PARAMETER + "&") || url.contains("&" + CONVERT_TO_PDF_PARAMETER + "&")) {
             originalUrl = url.replace(CONVERT_TO_PDF_PARAMETER + "&", "");
@@ -21,10 +23,21 @@ public class ImageLinkHelper {
         } else if (url.contains("?" + CONVERT_TO_PDF_PARAMETER)) {
             originalUrl = url.replace("?" + CONVERT_TO_PDF_PARAMETER, "");
         }
-        return URI.create(originalUrl);
+        response.setDisplayUrl(URI.create(originalUrl));
+    }
+
+    public static void addImageMetadata(final Response response, final BufferedImage image) {
+        response.addMetadata("imageHeight", image.getHeight() + "");
+        response.addMetadata("imageWidth", image.getWidth() + "");
+        response.addMetadata("numberOfPixels", image.getWidth() * image.getHeight() + "");
+        response.addMetadata("transparency", image.getColorModel().hasAlpha() + "");
+        response.addMetadata("colorDepth", image.getColorModel().getPixelSize() + "");
     }
 
     public static void addImageLinksAsPdf(final Document document, final ImageLinkConfig imageLinkConfig) {
+        if (imageLinkConfig == null) {
+            return;
+        }
         StringBuilder imageLinks = new StringBuilder("<!--googleoff: index--><!--googleoff: snippet-->");
         Elements images = document.select("img");
         for (Element image : images) {
