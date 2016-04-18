@@ -28,7 +28,6 @@ import org.jsoup.nodes.Document;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.net.URI;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -148,13 +147,25 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
                 } else {
                     contentSource = new HttpContentSource(config);
                 }
-                ContentSource.Status status = contentSource.retrieveContent(requestUrl);
+                String urlToRequest;
+                if (config.isTlsTermination()) {
+                    urlToRequest = getHttspUrl(requestUrl);
+                } else {
+                    urlToRequest = requestUrl;
+                }
+                String requestCookieValue = null;
+                if (config.isPassRequestCookies()) {
+                    requestCookieValue = HttpHeaderHelper.getRequestCookieValue(request);
+                }
+                ContentSource.Status status = contentSource.retrieveContent(urlToRequest, requestCookieValue);
+                String content = null;
                 if (status == ContentSource.Status.NOT_FOUND) {
                     response.respondNotFound();
                     return;
-                }
-                String content = null;
-                if (status == ContentSource.Status.HTML_CONTENT) {
+                } else if (status == ContentSource.Status.REDIRECT) {
+                    contentSource.respondRedirect(response.getOutputStream());
+                    return;
+                } else if (status == ContentSource.Status.HTML_CONTENT) {
                     content = contentSource.getContentAsString();
                     if (config.getOmitContentRegex() != null && config.getOmitContentRegex().matcher(content).matches()) {
                         response.respondNotFound();
@@ -166,6 +177,9 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
                 HttpHeaderHelper.transferDefaultHeadersToResponse(headers, response);
                 if (config.isPassGsaHeaders()) {
                     HttpHeaderHelper.transferGsaHeadersToResponse(headers, response);
+                }
+                if (config.isPassRequestCookies()) {
+                    HttpHeaderHelper.passResponseCookies(headers, response);
                 }
                 HttpHeaderHelper.convertHeadersToMetadata(response, headers, config.getHeadersToMetadata());
                 HttpHeaderHelper.setHeaders(response, config.isSetNoFollow(), config.isSetCrawlOnce(),
@@ -182,7 +196,7 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
                             return;
                         }
                         response.setContentType("application/pdf");
-                        ImageLinkHelper.setDisplayUrl(response, requestUrl);
+                        ImageLinkHelper.setDisplayUrl(response, urlToRequest);
                         ImageLinkHelper.addImageMetadata(response, image);
                         contentSource.writeImageAsPdf(image, response.getOutputStream());
                     } else {
@@ -192,12 +206,13 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
                 }
                 assert content != null;
                 if (config.getExcludeCssSelectors().size() > 0 || config.getExtractConfigs().size() > 0 || config.isSortParameters()
-                        || config.getRemoveParameters().size() > 0 || config.getImageLinkConfig() != null) {
+                        || config.getRemoveParameters().size() > 0 || config.getImageLinkConfig() != null || config.isTlsTermination()) {
                     Document document = Jsoup.parse(content);
                     ExtractHelper.excludeContent(document, config.getExcludeCssSelectors());
                     ExtractHelper.extractContent(response, document, requestUrl, config.getExtractConfigs());
-                    ExtractHelper.modifyUrlParameters(document, config.isSortParameters(), config.getRemoveParameters());
-                    ImageLinkHelper.addImageLinksAsPdf(document, config.getImageLinkConfig());
+                    ExtractHelper.modifyDocumentLinks(document, config.isSortParameters(), config.getRemoveParameters(),
+                            config.isTlsTermination());
+                    ImageLinkHelper.addImageLinksAsPdf(document, config.getImageLinkConfig(), config.isTlsTermination());
                     content = document.outerHtml();
                 }
                 IOUtils.write(content, response.getOutputStream());
@@ -240,7 +255,14 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
         }
     }
 
-    private String getApplicableUrl(final String url) {
+    private static String getApplicableUrl(final String url) {
         return url.substring(0, url.lastIndexOf("/"));
+    }
+
+    private static String getHttspUrl(final String url) {
+        if (url.startsWith("http://")) {
+            return "https" + url.substring(4);
+        }
+        return url;
     }
 }

@@ -13,6 +13,7 @@ import java.net.URI;
 
 public class ImageLinkHelper {
     public static final String CONVERT_TO_PDF_PARAMETER = "convert2pdf=true";
+    private static final String NBSP = "\u00a0";
 
     public static void setDisplayUrl(final Response response, final String url) {
         String originalUrl = url;
@@ -34,7 +35,7 @@ public class ImageLinkHelper {
         response.addMetadata("colorDepth", image.getColorModel().getPixelSize() + "");
     }
 
-    public static void addImageLinksAsPdf(final Document document, final ImageLinkConfig imageLinkConfig) {
+    public static void addImageLinksAsPdf(final Document document, final ImageLinkConfig imageLinkConfig, final boolean tlsTermination) {
         if (imageLinkConfig == null) {
             return;
         }
@@ -53,7 +54,7 @@ public class ImageLinkHelper {
                     searchKeywords.append(" ").append(surroundingText);
                 }
             }
-            String pdfUrl = getPdfUrl(imageUrl);
+            String pdfUrl = getPdfUrl(imageUrl, tlsTermination);
             imageLinks.append("<a href=\"").append(pdfUrl).append("\">").append(searchKeywords.toString()).append("</a>");
         }
         imageLinks.append("\n<!--googleon: snippet-->\n<!--googleon: index-->");
@@ -71,12 +72,12 @@ public class ImageLinkHelper {
                 nextNode = nextNode.parent();
             }
             if (nextNode instanceof TextNode) {
-                String text = ((TextNode) nextNode).text().replaceAll("\u00a0", " ").trim();
+                String text = ((TextNode) nextNode).text().replaceAll(NBSP, " ").trim();
                 if (!text.isEmpty() && text.length() >= surroundingTextMinLength) {
                     return text;
                 }
             } else if (nextNode instanceof Element) {
-                String text = ((Element) nextNode).text().replaceAll("\u00a0", " ").trim();
+                String text = ((Element) nextNode).text().replaceAll(NBSP, " ").trim();
                 if (!text.isEmpty() && text.length() >= surroundingTextMinLength) {
                     return text;
                 }
@@ -88,12 +89,12 @@ public class ImageLinkHelper {
                 previousNode = previousNode.parent();
             }
             if (previousNode instanceof TextNode) {
-                String text = ((TextNode) previousNode).text().replaceAll("\u00a0", " ").trim();
+                String text = ((TextNode) previousNode).text().replaceAll(NBSP, " ").trim();
                 if (!text.isEmpty() && text.length() >= surroundingTextMinLength) {
                     return text;
                 }
             } else if (previousNode instanceof Element) {
-                String text = ((Element) previousNode).text().replaceAll("\u00a0", " ").trim();
+                String text = ((Element) previousNode).text().replaceAll(NBSP, " ").trim();
                 if (!text.isEmpty() && text.length() >= surroundingTextMinLength) {
                     return text;
                 }
@@ -102,14 +103,27 @@ public class ImageLinkHelper {
         return "";
     }
 
-    private static String getPdfUrl(final String imageUrl) {
-        if (imageUrl.endsWith("?") || imageUrl.endsWith("&")) {
-            return imageUrl + CONVERT_TO_PDF_PARAMETER;
-        }
-        if (imageUrl.contains("?")) {
-            return imageUrl + "&" + CONVERT_TO_PDF_PARAMETER;
+    private static String getPdfUrl(final String imageUrl, final boolean tlsTermination) {
+        String modifiedImageUrl;
+        if (tlsTermination) {
+            modifiedImageUrl = getHttpUrl(imageUrl);
         } else {
-            return imageUrl + "?" + CONVERT_TO_PDF_PARAMETER;
+            modifiedImageUrl = imageUrl;
         }
+        if (modifiedImageUrl.endsWith("?") || modifiedImageUrl.endsWith("&")) {
+            return modifiedImageUrl + CONVERT_TO_PDF_PARAMETER;
+        }
+        if (modifiedImageUrl.contains("?")) {
+            return modifiedImageUrl + "&" + CONVERT_TO_PDF_PARAMETER;
+        } else {
+            return modifiedImageUrl + "?" + CONVERT_TO_PDF_PARAMETER;
+        }
+    }
+
+    private static String getHttpUrl(final String url) {
+        if (url.startsWith("https://")) {
+            return "http" + url.substring(5);
+        }
+        return url;
     }
 }

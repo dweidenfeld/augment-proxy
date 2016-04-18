@@ -22,6 +22,8 @@ public final class PatternConfig {
     private final boolean sortParameters;
     private final boolean executeJavascript;
     private final boolean passGsaHeaders;
+    private final boolean tlsTermination;
+    private final boolean passRequestCookies;
     private final long javascriptTimeout;
     private final String userAgent;
     private final Pattern omitContentRegex;
@@ -41,6 +43,8 @@ public final class PatternConfig {
         this.sortParameters = builder.sortParameters;
         this.executeJavascript = builder.executeJavascript;
         this.passGsaHeaders = builder.passGsaHeaders;
+        this.tlsTermination = builder.tlsTermination;
+        this.passRequestCookies = builder.passRequestCookies;
         this.javascriptTimeout = builder.javascriptTimeout;
         this.userAgent = builder.userAgent;
         this.omitContentRegex = builder.omitContentRegex;
@@ -82,6 +86,14 @@ public final class PatternConfig {
 
     public boolean isPassGsaHeaders() {
         return passGsaHeaders;
+    }
+
+    public boolean isTlsTermination() {
+        return tlsTermination;
+    }
+
+    public boolean isPassRequestCookies() {
+        return passRequestCookies;
     }
 
     public long getJavascriptTimeout() {
@@ -129,6 +141,8 @@ public final class PatternConfig {
         private boolean sortParameters = false;
         private boolean executeJavascript = false;
         private boolean passGsaHeaders = false;
+        private boolean tlsTermination = false;
+        private boolean passRequestCookies = false;
         private long javascriptTimeout = 10000;
         private String userAgent = BrowserContentSource.DEFAULT_BROWSER_VERSION.getUserAgent();
         private Pattern omitContentRegex;
@@ -179,6 +193,16 @@ public final class PatternConfig {
 
         public Builder passGsaHeaders(boolean passGsaHeaders) {
             this.passGsaHeaders = passGsaHeaders;
+            return this;
+        }
+
+        public Builder tlsTermination(boolean tlsTermination) {
+            this.tlsTermination = tlsTermination;
+            return this;
+        }
+
+        public Builder passRequestCookies(boolean passRequestCookies) {
+            this.passRequestCookies = passRequestCookies;
             return this;
         }
 

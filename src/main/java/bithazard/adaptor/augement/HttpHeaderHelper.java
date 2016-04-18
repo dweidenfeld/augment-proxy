@@ -5,13 +5,16 @@ import com.google.enterprise.adaptor.Acl;
 import com.google.enterprise.adaptor.DocId;
 import com.google.enterprise.adaptor.GroupPrincipal;
 import com.google.enterprise.adaptor.Principal;
+import com.google.enterprise.adaptor.Request;
 import com.google.enterprise.adaptor.Response;
 import com.google.enterprise.adaptor.UserPrincipal;
+import com.sun.net.httpserver.HttpExchange;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.text.DateFormat;
@@ -24,6 +27,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class HttpHeaderHelper {
@@ -66,8 +70,7 @@ public class HttpHeaderHelper {
     }
 
     public static Map<String, String> convertToHeaderMap(List<NameValuePair> responseHeaders) {
-        Map<String, String> headers;
-        headers = new LinkedHashMap<>(responseHeaders.size());
+        Map<String, String> headers = new LinkedHashMap<>(responseHeaders.size());
         for (NameValuePair responseHttpHeader : responseHeaders) {
             String existingHeaderValue = headers.get(responseHttpHeader.getName());
             if (existingHeaderValue == null) {
@@ -85,6 +88,25 @@ public class HttpHeaderHelper {
             if (existingHeaderValue != null) {
                 response.addMetadata(headerToMetadata.getValue(), existingHeaderValue);
             }
+        }
+    }
+
+    public static String getRequestCookieValue(Request request) {
+        HttpExchange httpExchange = getHttpExchange(request);
+        if (httpExchange != null) {
+            return httpExchange.getRequestHeaders().getFirst("Cookie");
+        }
+        return null;
+    }
+
+    public static void passResponseCookies(final Map<String, String> headers, final Response response) {
+        String cookieValue = headers.get("Set-Cookie");
+        if (cookieValue == null) {
+            return;
+        }
+        HttpExchange httpExchange = getHttpExchange(response);
+        if (httpExchange != null) {
+            httpExchange.getResponseHeaders().add("Set-Cookie", cookieValue);
         }
     }
 
@@ -229,6 +251,37 @@ public class HttpHeaderHelper {
             throw new AugmentProxyException("Encoding UTF-8 is not supported. This should not be possible on a standard"
                     + " compliant java platform.", e);
         }
+    }
+
+    private static HttpExchange getHttpExchange(Request request) {
+        if (request.getClass().getName().equals("com.google.enterprise.adaptor.DocumentHandler$DocumentRequest")) {
+            try {
+                Field ex = request.getClass().getDeclaredField("ex");
+                ex.setAccessible(true);
+                return  (HttpExchange) ex.get(request);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                LOGGER.log(Level.WARNING, "Exception getting HttpExchange.", e);
+                return null;
+            }
+        } else {
+            LOGGER.warning("Request is not of type DocumentRequest. Count not get HttpExchange.");
+            return null;
+        }
+    }
+
+    private static HttpExchange getHttpExchange(Response response) {
+        if (response.getClass().getName().equals("com.google.enterprise.adaptor.DocumentHandler$DocumentResponse")) {
+            try {
+                Field ex = response.getClass().getDeclaredField("ex");
+                ex.setAccessible(true);
+                return  (HttpExchange) ex.get(response);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                LOGGER.log(Level.WARNING, "Exception getting HttpExchange.", e);
+            }
+        } else {
+            LOGGER.warning("Response is not of type DocumentResponse. Count not get HttpExchange.");
+        }
+        return null;
     }
 
     private static Date parseHttpDate(String dateString) {

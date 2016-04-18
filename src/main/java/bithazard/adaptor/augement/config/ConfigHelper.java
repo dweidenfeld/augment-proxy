@@ -143,6 +143,14 @@ public final class ConfigHelper {
                 if (passGsaHeaders != null) {
                     patternConfigBuilder.passGsaHeaders(passGsaHeaders);
                 }
+                Boolean tlsTermination = (Boolean) augmentConfigJsonObject.get("tlsTermination");
+                if (tlsTermination != null) {
+                    patternConfigBuilder.tlsTermination(tlsTermination);
+                }
+                Boolean passRequestCookies = (Boolean) augmentConfigJsonObject.get("passRequestCookies");
+                if (passRequestCookies != null) {
+                    patternConfigBuilder.passRequestCookies(passRequestCookies);
+                }
                 JSONArray excludeCssSelectors = (JSONArray) augmentConfigJsonObject.get("excludeCssSelectors");
                 if (excludeCssSelectors != null) {
                     String[] excludeCssSelectorStrings =

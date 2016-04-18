@@ -6,16 +6,18 @@ import java.io.OutputStream;
 import java.util.Map;
 
 public interface ContentSource {
-    Status retrieveContent(String requestUrl) throws IOException;
+    Status retrieveContent(String url, String cookieHeaderValue) throws IOException;
     Map<String, String> getHeaders();
     String getContentAsString();
-    void writeContent(OutputStream outputStream) throws IOException;
     BufferedImage getContentAsImage() throws IOException;
+    void writeContent(OutputStream outputStream) throws IOException;
     void writeImageAsPdf(BufferedImage image, OutputStream outputStream) throws IOException;
+    void respondRedirect(OutputStream outputStream) throws IOException;
 
     enum Status {
         HTML_CONTENT,
         BINARY_CONTENT,
-        NOT_FOUND;
+        NOT_FOUND,
+        REDIRECT;
     }
 }

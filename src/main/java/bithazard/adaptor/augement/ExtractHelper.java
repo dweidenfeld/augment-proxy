@@ -130,7 +130,7 @@ public final class ExtractHelper {
                             LOGGER.warning("(" + requestUrl + ") Regex result for link was null. Not adding link.");
                         }
                     } catch (URISyntaxException e) {
-                        LOGGER.warning("(" + requestUrl + ") Regex result for link was an invalid URL (" +regexResult
+                        LOGGER.warning("(" + requestUrl + ") Regex result for link was an invalid URL (" + regexResult
                                 + "). Not adding link.");
                     }
                 }
@@ -185,20 +185,22 @@ public final class ExtractHelper {
         }
     }
 
-    public static void modifyUrlParameters(Document document, boolean sortParameters, Set<Pattern> removeParameters) {
-        if (!sortParameters && removeParameters.size() == 0) {
+    public static void modifyDocumentLinks(Document document, boolean sortParameters, Set<Pattern> removeParameters,
+                                           final boolean tlsTermination) {
+        if (!sortParameters && !tlsTermination && removeParameters.size() == 0) {
             return;
         }
-        modifyMetaHttpEquivRefresh(document, sortParameters, removeParameters);
+        modifyMetaHttpEquivRefresh(document, sortParameters, removeParameters, tlsTermination);
         Elements anchors = document.select("a");
         for (Element anchor : anchors) {
             String href = anchor.attr("href");
-            href = modifyUrlParameters(href, sortParameters, removeParameters);
+            href = getModifiedUrl(href, sortParameters, removeParameters, tlsTermination);
             anchor.attr("href", href);
         }
     }
 
-    private static void modifyMetaHttpEquivRefresh(Document document, boolean sortParameters, Set<Pattern> removeParameters) {
+    private static void modifyMetaHttpEquivRefresh(Document document, boolean sortParameters, Set<Pattern> removeParameters,
+                                                   final boolean tlsTermination) {
         Element redirect = document.select("meta[http-equiv=refresh]").first();
         if (redirect != null) {
             String redirectContent = redirect.attr("content");
@@ -218,7 +220,7 @@ public final class ExtractHelper {
                         encloseChar = "\"";
                         urlAttributeValue = urlAttributeValue.substring(1, urlAttributeValue.length() - 2);
                     }
-                    urlAttributeValue = modifyUrlParameters(urlAttributeValue, sortParameters, removeParameters);
+                    urlAttributeValue = getModifiedUrl(urlAttributeValue, sortParameters, removeParameters, tlsTermination);
                     String sortedRedirectContent = redirectSeconds + ";" + urlAttributeName + "=" + encloseChar
                             + urlAttributeValue + encloseChar;
                     redirect.attr("content", sortedRedirectContent);
@@ -227,13 +229,20 @@ public final class ExtractHelper {
         }
     }
 
-    private static String modifyUrlParameters(String href, boolean sortParameters, Set<Pattern> removeParameters) {
-        if (!href.contains("?") || (!href.contains("&") && !href.contains("&amp;"))) {
-            return href;
+    private static String getModifiedUrl(String url, boolean sortParameters, Set<Pattern> removeParameters,
+                                         final boolean tlsTermination) {
+        String modifiedUrl;
+        if (tlsTermination) {
+            modifiedUrl = getHttpUrl(url);
+        } else {
+            modifiedUrl = url;
         }
-        int parametersStart = href.indexOf("?");
-        String url = href.substring(0, parametersStart);
-        String parameters = href.substring(parametersStart + 1);
+        if (!modifiedUrl.contains("?") || (!modifiedUrl.contains("&") && !modifiedUrl.contains("&amp;"))) {
+            return modifiedUrl;
+        }
+        int parametersStart = modifiedUrl.indexOf("?");
+        String baseUrl = modifiedUrl.substring(0, parametersStart);
+        String parameters = modifiedUrl.substring(parametersStart + 1);
         Set<String> sortedParameterSet;
         if (sortParameters) {
             sortedParameterSet = new TreeSet<>();
@@ -264,7 +273,7 @@ public final class ExtractHelper {
         if (!matchesAnyPattern(finalParameter, removeParameters)) {
             sortedParameterSet.add(finalParameter);
         }
-        StringBuilder sortedParameters = new StringBuilder(url);
+        StringBuilder sortedParameters = new StringBuilder(baseUrl);
         sortedParameters.append("?");
         for (String parameter : sortedParameterSet) {
             sortedParameters.append(parameter).append("&");
@@ -279,5 +288,12 @@ public final class ExtractHelper {
             }
         }
         return false;
+    }
+
+    private static String getHttpUrl(final String url) {
+        if (url.startsWith("https://")) {
+            return "http" + url.substring(5);
+        }
+        return url;
     }
 }

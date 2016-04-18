@@ -5,9 +5,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
 
-public class AdaptorContentSource implements ContentSource {
+public class AdaptorContentSource extends AbstractContentSource {
     @Override
-    public Status retrieveContent(final String requestUrl) throws IOException {
+    public Status retrieveContent(final String url, final String cookieHeaderValue) throws IOException {
         return null;
     }
 
@@ -22,17 +22,22 @@ public class AdaptorContentSource implements ContentSource {
     }
 
     @Override
-    public void writeContent(final OutputStream outputStream) throws IOException {
-
-    }
-
-    @Override
     public BufferedImage getContentAsImage() throws IOException {
         return null;
     }
 
     @Override
+    public void writeContent(final OutputStream outputStream) throws IOException {
+
+    }
+
+    @Override
     public void writeImageAsPdf(final BufferedImage image, final OutputStream outputStream) throws IOException {
+
+    }
+
+    @Override
+    public void respondRedirect(final OutputStream outputStream) {
 
     }
 }
