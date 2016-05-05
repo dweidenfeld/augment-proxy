@@ -123,7 +123,7 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
         docIdPusher.pushRecords(records);
     }
 
-    private void addSitemapRecordsAfter(final List<DocIdPusher.Record> records, final Date minDate) {
+    private void addSitemapRecordsAfter(List<DocIdPusher.Record> records, Date minDate) {
         for (FeedConfig feedConfig : adaptorConfig.getSitemapConfig()) {
             Collection<SitemapEntry> sitemapEntries = this.sitemapCache.getSitemapEntriesAfter(feedConfig.getUrl(), minDate);
             for (SitemapEntry sitemapEntry : sitemapEntries) {
@@ -162,9 +162,6 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
                 if (status == ContentSource.Status.NOT_FOUND) {
                     response.respondNotFound();
                     return;
-                } else if (status == ContentSource.Status.REDIRECT) {
-                    contentSource.respondRedirect(response.getOutputStream());
-                    return;
                 } else if (status == ContentSource.Status.HTML_CONTENT) {
                     content = contentSource.getContentAsString();
                     if (config.getOmitContentRegex() != null && config.getOmitContentRegex().matcher(content).matches()) {
@@ -173,7 +170,7 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
                     }
                 }
 
-                Map<String, String> headers = contentSource.getHeaders();
+                Map<String, List<String>> headers = contentSource.getHeaders();
                 HttpHeaderHelper.transferDefaultHeadersToResponse(headers, response);
                 if (config.isPassGsaHeaders()) {
                     HttpHeaderHelper.transferGsaHeadersToResponse(headers, response);
@@ -184,6 +181,12 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
                 HttpHeaderHelper.convertHeadersToMetadata(response, headers, config.getHeadersToMetadata());
                 HttpHeaderHelper.setHeaders(response, config.isSetNoFollow(), config.isSetCrawlOnce(),
                         config.isSetNoArchive(), config.isSetNoIndex());
+
+                if (status == ContentSource.Status.REDIRECT) {
+                    response.setContentType("text/html");
+                    contentSource.respondRedirect(response.getOutputStream());
+                    return;
+                }
 
                 addSitemapMetadata(response, adaptorConfig.getSitemapConfig(), requestUrl);
 
@@ -223,7 +226,7 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
         response.respondNotFound();
     }
 
-    private void addSitemapMetadata(final Response response, final Set<FeedConfig> sitemapConfigs, final String requestUrl) {
+    private void addSitemapMetadata(Response response, Set<FeedConfig> sitemapConfigs, String requestUrl) {
         FeedConfig matchingSitemapConfig = null;
         for (FeedConfig sitemapConfig : sitemapConfigs) {
             String applicableUrl = getApplicableUrl(sitemapConfig.getUrl());
@@ -251,15 +254,14 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
                     break;
                 }
             }
-
         }
     }
 
-    private static String getApplicableUrl(final String url) {
+    private static String getApplicableUrl(String url) {
         return url.substring(0, url.lastIndexOf("/"));
     }
 
-    private static String getHttspUrl(final String url) {
+    private static String getHttspUrl(String url) {
         if (url.startsWith("http://")) {
             return "https" + url.substring(4);
         }

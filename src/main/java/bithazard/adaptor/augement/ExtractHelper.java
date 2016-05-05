@@ -26,6 +26,10 @@ public final class ExtractHelper {
     private static final Logger LOGGER = Logger.getLogger(ExtractHelper.class.getName());
     private static final String SKIP_METADATA_NAME = "_";
 
+    private ExtractHelper() {
+        throw new AssertionError("Instantiating utility class...");
+    }
+
     public static void excludeContent(Document document, Set<String> excludeCssSelectors) {
         for (String excludeCssSelector : excludeCssSelectors) {
             Elements excludeElement = document.select(excludeCssSelector);
@@ -42,8 +46,8 @@ public final class ExtractHelper {
         }
     }
 
-    private static List<String> getRegexResults(final Document document, final String requestUrl, final Map<String, Elements> cssCache,
-                                                final ExtractConfig extractConfig) {
+    private static List<String> getRegexResults(Document document, String requestUrl, Map<String, Elements> cssCache,
+                                                ExtractConfig extractConfig) {
         List<String> regexResults = new ArrayList<>();
         switch (extractConfig.getScope()) {
             case URL: {
@@ -91,8 +95,8 @@ public final class ExtractHelper {
         return regexResults;
     }
 
-    private static void processRegexResults(final Response response, final Document document, final String requestUrl,
-                                            final ExtractConfig extractConfig, final List<String> regexResults) {
+    private static void processRegexResults(Response response, Document document, String requestUrl, ExtractConfig extractConfig,
+                                            List<String> regexResults) {
         switch (extractConfig.getTarget()) {
             case TITLE: {
                 String title = regexResults.get(extractConfig.getTitleCssElement());
@@ -290,7 +294,7 @@ public final class ExtractHelper {
         return false;
     }
 
-    private static String getHttpUrl(final String url) {
+    private static String getHttpUrl(String url) {
         if (url.startsWith("https://")) {
             return "http" + url.substring(5);
         }

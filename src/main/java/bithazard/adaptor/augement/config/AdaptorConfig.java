@@ -32,21 +32,21 @@ public final class AdaptorConfig {
         private Set<FeedConfig> rssConfig = new LinkedHashSet<>(0);
         private Set<FeedConfig> atomConfig = new LinkedHashSet<>(0);
 
-        public Builder sitemapConfig(final Set<FeedConfig> sitemapConfig) {
+        public Builder sitemapConfig(Set<FeedConfig> sitemapConfig) {
             Set<FeedConfig> sitemapConfigCopy = new LinkedHashSet<>();
             sitemapConfigCopy.addAll(sitemapConfig);
             this.sitemapConfig = sitemapConfigCopy;
             return this;
         }
 
-        public Builder rssConfig(final Set<FeedConfig> rssConfig) {
+        public Builder rssConfig(Set<FeedConfig> rssConfig) {
             Set<FeedConfig> rssConfigCopy = new LinkedHashSet<>();
             rssConfigCopy.addAll(rssConfig);
             this.rssConfig = rssConfigCopy;
             return this;
         }
 
-        public Builder atomConfig(final Set<FeedConfig> atomConfig) {
+        public Builder atomConfig(Set<FeedConfig> atomConfig) {
             Set<FeedConfig> atomConfigCopy = new LinkedHashSet<>();
             atomConfigCopy.addAll(atomConfig);
             this.atomConfig = atomConfigCopy;

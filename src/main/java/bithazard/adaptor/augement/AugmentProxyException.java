@@ -8,7 +8,7 @@ public class AugmentProxyException extends RuntimeException {
      * Create a new AugmentProxyException with a message.
      * @param message    The message of the exception.
      */
-    public AugmentProxyException(final String message) {
+    public AugmentProxyException(String message) {
         super(message);
     }
 
@@ -17,7 +17,7 @@ public class AugmentProxyException extends RuntimeException {
      * @param message    The message of the exception.
      * @param cause      The cause of the exception.
      */
-    public AugmentProxyException(final String message, final Throwable cause) {
+    public AugmentProxyException(String message, Throwable cause) {
         super(message, cause);
     }
 
@@ -25,7 +25,7 @@ public class AugmentProxyException extends RuntimeException {
      * Create a new AugmentProxyException with a cause.
      * @param cause    The cause of the exception.
      */
-    public AugmentProxyException(final Throwable cause) {
+    public AugmentProxyException(Throwable cause) {
         super(cause);
     }
 }

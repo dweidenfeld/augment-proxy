@@ -8,7 +8,7 @@ public class AugmentConfigException extends RuntimeException {
      * Create a new AugmentConfigException with a message.
      * @param message    The message of the exception.
      */
-    public AugmentConfigException(final String message) {
+    public AugmentConfigException(String message) {
         super(message);
     }
 
@@ -17,7 +17,7 @@ public class AugmentConfigException extends RuntimeException {
      * @param message    The message of the exception.
      * @param cause      The cause of the exception.
      */
-    public AugmentConfigException(final String message, final Throwable cause) {
+    public AugmentConfigException(String message, Throwable cause) {
         super(message, cause);
     }
 
@@ -25,7 +25,7 @@ public class AugmentConfigException extends RuntimeException {
      * Create a new AugmentConfigException with a cause.
      * @param cause    The cause of the exception.
      */
-    public AugmentConfigException(final Throwable cause) {
+    public AugmentConfigException(Throwable cause) {
         super(cause);
     }
 }

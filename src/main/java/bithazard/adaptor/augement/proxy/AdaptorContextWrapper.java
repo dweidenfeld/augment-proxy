@@ -19,7 +19,7 @@ import com.sun.net.httpserver.HttpHandler;
 public class AdaptorContextWrapper implements AdaptorContext {
     private final AdaptorContext adaptorContext;
 
-    public AdaptorContextWrapper(final AdaptorContext adaptorContext) {
+    public AdaptorContextWrapper(AdaptorContext adaptorContext) {
         this.adaptorContext = adaptorContext;
     }
 
@@ -44,12 +44,12 @@ public class AdaptorContextWrapper implements AdaptorContext {
     }
 
     @Override
-    public void addStatusSource(final StatusSource source) {
+    public void addStatusSource(StatusSource source) {
 
     }
 
     @Override
-    public void setGetDocIdsFullErrorHandler(final ExceptionHandler handler) {
+    public void setGetDocIdsFullErrorHandler(ExceptionHandler handler) {
 
     }
 
@@ -59,7 +59,7 @@ public class AdaptorContextWrapper implements AdaptorContext {
     }
 
     @Override
-    public void setGetDocIdsIncrementalErrorHandler(final ExceptionHandler handler) {
+    public void setGetDocIdsIncrementalErrorHandler(ExceptionHandler handler) {
 
     }
 
@@ -74,27 +74,27 @@ public class AdaptorContextWrapper implements AdaptorContext {
     }
 
     @Override
-    public HttpContext createHttpContext(final String path, final HttpHandler handler) {
+    public HttpContext createHttpContext(String path, HttpHandler handler) {
         return null;
     }
 
     @Override
-    public Session getUserSession(final HttpExchange ex, final boolean create) {
+    public Session getUserSession(HttpExchange ex, boolean create) {
         return null;
     }
 
     @Override
-    public void setPollingIncrementalLister(final PollingIncrementalLister lister) {
+    public void setPollingIncrementalLister(PollingIncrementalLister lister) {
 
     }
 
     @Override
-    public void setAuthnAuthority(final AuthnAuthority authnAuthority) {
+    public void setAuthnAuthority(AuthnAuthority authnAuthority) {
 
     }
 
     @Override
-    public void setAuthzAuthority(final AuthzAuthority authzAuthority) {
+    public void setAuthzAuthority(AuthzAuthority authzAuthority) {
 
     }
 }

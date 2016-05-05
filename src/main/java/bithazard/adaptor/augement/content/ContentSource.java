@@ -3,11 +3,12 @@ package bithazard.adaptor.augement.content;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Map;
 
 public interface ContentSource {
     Status retrieveContent(String url, String cookieHeaderValue) throws IOException;
-    Map<String, String> getHeaders();
+    Map<String, List<String>> getHeaders();
     String getContentAsString();
     BufferedImage getContentAsImage() throws IOException;
     void writeContent(OutputStream outputStream) throws IOException;

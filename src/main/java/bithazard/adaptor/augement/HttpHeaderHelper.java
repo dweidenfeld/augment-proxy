@@ -9,6 +9,7 @@ import com.google.enterprise.adaptor.Request;
 import com.google.enterprise.adaptor.Response;
 import com.google.enterprise.adaptor.UserPrincipal;
 import com.sun.net.httpserver.HttpExchange;
+import org.apache.http.Header;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -30,7 +31,7 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class HttpHeaderHelper {
+public final class HttpHeaderHelper {
     private static final Logger LOGGER = Logger.getLogger(HttpHeaderHelper.class.getName());
     private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
     private static final ThreadLocal<DateFormat> DATE_FORMAT_RFC_1123 = new ThreadLocal<DateFormat>() {
@@ -54,6 +55,10 @@ public class HttpHeaderHelper {
         }
     };
 
+    private HttpHeaderHelper() {
+        throw new AssertionError("Instantiating utility class...");
+    }
+
     public static void setHeaders(Response response, boolean noFollow, boolean crawlOnce, boolean noArchive, boolean noIndex) {
         if (noFollow) {
             response.setNoFollow(true);
@@ -69,24 +74,42 @@ public class HttpHeaderHelper {
         }
     }
 
-    public static Map<String, String> convertToHeaderMap(List<NameValuePair> responseHeaders) {
-        Map<String, String> headers = new LinkedHashMap<>(responseHeaders.size());
-        for (NameValuePair responseHttpHeader : responseHeaders) {
-            String existingHeaderValue = headers.get(responseHttpHeader.getName());
-            if (existingHeaderValue == null) {
-                headers.put(responseHttpHeader.getName(), responseHttpHeader.getValue());
-            } else {
-                headers.put(responseHttpHeader.getName(), existingHeaderValue + ", " + responseHttpHeader.getValue());
-            }
+    public static Map<String, List<String>> convertToHeaderMap(List<NameValuePair> headers) {
+        Map<String, List<String>> headerMap = new LinkedHashMap<>();
+        for (NameValuePair header : headers) {
+            String headerName = header.getName();
+            String headerValue = header.getValue();
+            addToMap(headerMap, headerName, headerValue);
         }
-        return headers;
+        return headerMap;
     }
 
-    public static void convertHeadersToMetadata(Response response, Map<String, String> headers, Map<String, String> headersToMetadata) {
+    public static Map<String, List<String>> convertToHeaderMap(Header[] headers) {
+        Map<String, List<String>> headerMap = new LinkedHashMap<>();
+        for (Header header : headers) {
+            String headerName = header.getName();
+            String headerValue = header.getValue();
+            addToMap(headerMap, headerName, headerValue);
+        }
+        return headerMap;
+    }
+
+    private static void addToMap(Map<String, List<String>> headerMap, String headerName, String headerValue) {
+        List<String> existingHeaderValues = headerMap.get(headerName);
+        if (existingHeaderValues == null) {
+            existingHeaderValues = new ArrayList<>();
+            headerMap.put(headerName, existingHeaderValues);
+        }
+        existingHeaderValues.add(headerValue);
+    }
+
+    public static void convertHeadersToMetadata(Response response, Map<String, List<String>> headers, Map<String, String> headersToMetadata) {
         for (Map.Entry<String, String> headerToMetadata : headersToMetadata.entrySet()) {
-            String existingHeaderValue = headers.get(headerToMetadata.getKey());
-            if (existingHeaderValue != null) {
-                response.addMetadata(headerToMetadata.getValue(), existingHeaderValue);
+            List<String> existingHeaderValues = headers.get(headerToMetadata.getKey());
+            if (existingHeaderValues != null) {
+                for (String existingHeaderValue : existingHeaderValues) {
+                    response.addMetadata(headerToMetadata.getValue(), existingHeaderValue);
+                }
             }
         }
     }
@@ -99,83 +122,103 @@ public class HttpHeaderHelper {
         return null;
     }
 
-    public static void passResponseCookies(final Map<String, String> headers, final Response response) {
-        String cookieValue = headers.get("Set-Cookie");
-        if (cookieValue == null) {
+    public static void passResponseCookies(Map<String, List<String>> headers, Response response) {
+        List<String> cookieValues = headers.get("Set-Cookie");
+        if (cookieValues == null) {
             return;
         }
         HttpExchange httpExchange = getHttpExchange(response);
         if (httpExchange != null) {
-            httpExchange.getResponseHeaders().add("Set-Cookie", cookieValue);
+            for (String cookieValue : cookieValues) {
+                httpExchange.getResponseHeaders().add("Set-Cookie", cookieValue);
+            }
         }
     }
 
-    public static void transferDefaultHeadersToResponse(Map<String, String> headers, Response response) {
-        for (Map.Entry<String, String> headerEntry : headers.entrySet()) {
+    public static void transferDefaultHeadersToResponse(Map<String, List<String>> headers, Response response) {
+        for (Map.Entry<String, List<String>> headerEntry : headers.entrySet()) {
             String headerName = headerEntry.getKey();
             if (headerName.equalsIgnoreCase("Content-Type")) {
-                String headerValue = headerEntry.getValue();
+                String headerValue = headerEntry.getValue().get(0);
                 response.setContentType(headerValue);
             } else if (headerName.equalsIgnoreCase("Last-Modified")) {
-                String headerValue = headerEntry.getValue();
+                String headerValue = headerEntry.getValue().get(0);
                 response.setLastModified(parseHttpDate(headerValue));
             }
         }
     }
 
-    public static void transferGsaHeadersToResponse(Map<String, String> headers, Response response) {
-        for (Map.Entry<String, String> headerEntry : headers.entrySet()) {
+    public static void transferGsaHeadersToResponse(Map<String, List<String>> headers, Response response) {
+        for (Map.Entry<String, List<String>> headerEntry : headers.entrySet()) {
             String headerName = headerEntry.getKey();
-            if (headerName.equals("X-GSA-External-Metadata")) {
-                String[] headerValues = headerEntry.getValue().split(", ");
-                for (String headerValue : headerValues) {
-                    String[] headerValueSplit = headerValue.split("=");
-                    String metadataKeyDecoded = decodeUrl(headerValueSplit[0]);
-                    String metadataValueDecoded = decodeUrl(headerValueSplit[1]);
-                    response.addMetadata(metadataKeyDecoded, metadataValueDecoded);
-                }
-            } else if (headerName.equals("X-gsa-external-anchor")) {
-                String[] headerValues = headerEntry.getValue().split(",");
-                for (String headerValue : headerValues) {
-                    String[] headerValueSplit = headerValue.split("=");
-                    if (headerValueSplit.length == 1) {
-                        String anchorDecoded = decodeUrl(headerValueSplit[0]);
-                        response.addAnchor(URI.create(anchorDecoded), null);
-                    } else if (headerValueSplit.length == 2) {
-                        String anchorTextDecoded = decodeUrl(headerValueSplit[0]);
-                        String anchorDecoded = decodeUrl(headerValueSplit[1]);
-                        response.addAnchor(URI.create(anchorDecoded), anchorTextDecoded);
+            switch (headerName) {
+                case "X-GSA-External-Metadata": {
+                    String[] headerValues = headerEntry.getValue().get(0).split(",");
+                    for (String headerValue : headerValues) {
+                        String[] headerValueSplit = headerValue.split("=");
+                        String metadataKeyDecoded = decodeUrl(headerValueSplit[0]);
+                        String metadataValueDecoded = decodeUrl(headerValueSplit[1]);
+                        response.addMetadata(metadataKeyDecoded, metadataValueDecoded);
                     }
+                    break;
                 }
-            } else if (headerName.equals("X-gsa-serve-security")) {
-                String headerValue = headerEntry.getValue();
-                response.setSecure(headerValue.equals("secure"));
-            } else if (headerName.equals("X-gsa-doc-controls")) {
-                String[] headerValues = headerEntry.getValue().split(", ");
-                for (String headerValue : headerValues) {
-                    String[] headerValueSplit = headerValue.split("=");
-                    if (headerValueSplit[0].equals("crawl_once")) {
-                        response.setCrawlOnce(Boolean.parseBoolean(headerValueSplit[1]));
-                    } else if (headerValueSplit[0].equals("lock")) {
-                        response.setLock(Boolean.parseBoolean(headerValueSplit[1]));
-                    } else if (headerValueSplit[0].equals("display_url")) {
-                        String displayUrlDecoded = decodeUrl(headerValueSplit[1]);
-                        response.setDisplayUrl(URI.create(displayUrlDecoded));
-                    } else if (headerValueSplit[0].equals("acl")) {
-                        String aclUrlDecoded = decodeUrl(headerValueSplit[1]);
-                        response.setAcl(jsonToAcl(aclUrlDecoded));
+                case "X-gsa-external-anchor": {
+                    String[] headerValues = headerEntry.getValue().get(0).split(",");
+                    for (String headerValue : headerValues) {
+                        String[] headerValueSplit = headerValue.split("=");
+                        if (headerValueSplit.length == 1) {
+                            String anchorDecoded = decodeUrl(headerValueSplit[0]);
+                            response.addAnchor(URI.create(anchorDecoded), null);
+                        } else if (headerValueSplit.length == 2) {
+                            String anchorTextDecoded = decodeUrl(headerValueSplit[0]);
+                            String anchorDecoded = decodeUrl(headerValueSplit[1]);
+                            response.addAnchor(URI.create(anchorDecoded), anchorTextDecoded);
+                        }
                     }
+                    break;
                 }
-            } else if (headerName.equals("X-Robots-Tag")) {
-                String[] headerValues = headerEntry.getValue().split(", ");
-                for (String headerValue : headerValues) {
-                    if (headerValue.equals("noindex")) {
-                        response.setNoIndex(true);
-                    } else if (headerValue.equals("nofollow")) {
-                        response.setNoFollow(true);
-                    } else if (headerValue.equals("noarchive")) {
-                        response.setNoArchive(true);
+                case "X-gsa-serve-security": {
+                    String headerValue = headerEntry.getValue().get(0);
+                    response.setSecure(headerValue.equals("secure"));
+                    break;
+                }
+                case "X-gsa-doc-controls": {
+                    for (String headerValue : headerEntry.getValue()) {
+                        String[] headerValueSplit = headerValue.split("=");
+                        switch (headerValueSplit[0]) {
+                            case "crawl_once":
+                                response.setCrawlOnce(Boolean.parseBoolean(headerValueSplit[1]));
+                                break;
+                            case "lock":
+                                response.setLock(Boolean.parseBoolean(headerValueSplit[1]));
+                                break;
+                            case "display_url":
+                                String displayUrlDecoded = decodeUrl(headerValueSplit[1]);
+                                response.setDisplayUrl(URI.create(displayUrlDecoded));
+                                break;
+                            case "acl":
+                                String aclUrlDecoded = decodeUrl(headerValueSplit[1]);
+                                response.setAcl(jsonToAcl(aclUrlDecoded));
+                                break;
+                        }
                     }
+                    break;
+                }
+                case "X-Robots-Tag": {
+                    for (String headerValue : headerEntry.getValue()) {
+                        switch (headerValue) {
+                            case "noindex":
+                                response.setNoIndex(true);
+                                break;
+                            case "nofollow":
+                                response.setNoFollow(true);
+                                break;
+                            case "noarchive":
+                                response.setNoArchive(true);
+                                break;
+                        }
+                    }
+                    break;
                 }
             }
         }
@@ -244,7 +287,7 @@ public class HttpHeaderHelper {
         return aclBuilder.build();
     }
 
-    private static String decodeUrl(final String string) {
+    private static String decodeUrl(String string) {
         try {
             return URLDecoder.decode(string, "UTF-8");
         } catch (UnsupportedEncodingException e) {

@@ -11,11 +11,15 @@ import org.jsoup.select.Elements;
 import java.awt.image.BufferedImage;
 import java.net.URI;
 
-public class ImageLinkHelper {
+public final class ImageLinkHelper {
     public static final String CONVERT_TO_PDF_PARAMETER = "convert2pdf=true";
     private static final String NBSP = "\u00a0";
 
-    public static void setDisplayUrl(final Response response, final String url) {
+    private ImageLinkHelper() {
+        throw new AssertionError("Instantiating utility class...");
+    }
+
+    public static void setDisplayUrl(Response response, String url) {
         String originalUrl = url;
         if (url.contains("?" + CONVERT_TO_PDF_PARAMETER + "&") || url.contains("&" + CONVERT_TO_PDF_PARAMETER + "&")) {
             originalUrl = url.replace(CONVERT_TO_PDF_PARAMETER + "&", "");
@@ -27,7 +31,7 @@ public class ImageLinkHelper {
         response.setDisplayUrl(URI.create(originalUrl));
     }
 
-    public static void addImageMetadata(final Response response, final BufferedImage image) {
+    public static void addImageMetadata(Response response, BufferedImage image) {
         response.addMetadata("imageHeight", image.getHeight() + "");
         response.addMetadata("imageWidth", image.getWidth() + "");
         response.addMetadata("numberOfPixels", image.getWidth() * image.getHeight() + "");
@@ -35,7 +39,7 @@ public class ImageLinkHelper {
         response.addMetadata("colorDepth", image.getColorModel().getPixelSize() + "");
     }
 
-    public static void addImageLinksAsPdf(final Document document, final ImageLinkConfig imageLinkConfig, final boolean tlsTermination) {
+    public static void addImageLinksAsPdf(Document document, ImageLinkConfig imageLinkConfig, boolean tlsTermination) {
         if (imageLinkConfig == null) {
             return;
         }
@@ -61,7 +65,7 @@ public class ImageLinkHelper {
         document.body().append(imageLinks.toString());
     }
 
-    private static String getSurroundingText(final Element image, final int surroundingTextMinLength) {
+    private static String getSurroundingText(Element image, int surroundingTextMinLength) {
         Node nextNode = image;
         Node previousNode = image;
         while (nextNode != null && previousNode != null) {
@@ -103,7 +107,7 @@ public class ImageLinkHelper {
         return "";
     }
 
-    private static String getPdfUrl(final String imageUrl, final boolean tlsTermination) {
+    private static String getPdfUrl(String imageUrl, boolean tlsTermination) {
         String modifiedImageUrl;
         if (tlsTermination) {
             modifiedImageUrl = getHttpUrl(imageUrl);
@@ -120,7 +124,7 @@ public class ImageLinkHelper {
         }
     }
 
-    private static String getHttpUrl(final String url) {
+    private static String getHttpUrl(String url) {
         if (url.startsWith("https://")) {
             return "http" + url.substring(5);
         }

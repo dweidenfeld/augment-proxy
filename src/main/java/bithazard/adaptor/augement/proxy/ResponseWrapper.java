@@ -11,7 +11,7 @@ import java.util.Date;
 public class ResponseWrapper implements Response {
     private final Response response;
 
-    public ResponseWrapper(final Response response) {
+    public ResponseWrapper(Response response) {
         this.response = response;
     }
 
@@ -36,67 +36,67 @@ public class ResponseWrapper implements Response {
     }
 
     @Override
-    public void setContentType(final String contentType) {
+    public void setContentType(String contentType) {
 
     }
 
     @Override
-    public void setLastModified(final Date lastModified) {
+    public void setLastModified(Date lastModified) {
 
     }
 
     @Override
-    public void addMetadata(final String key, final String value) {
+    public void addMetadata(String key, String value) {
 
     }
 
     @Override
-    public void setAcl(final Acl acl) {
+    public void setAcl(Acl acl) {
 
     }
 
     @Override
-    public void putNamedResource(final String fragment, final Acl acl) {
+    public void putNamedResource(String fragment, Acl acl) {
 
     }
 
     @Override
-    public void setSecure(final boolean secure) {
+    public void setSecure(boolean secure) {
 
     }
 
     @Override
-    public void addAnchor(final URI uri, final String text) {
+    public void addAnchor(URI uri, String text) {
 
     }
 
     @Override
-    public void setNoIndex(final boolean noIndex) {
+    public void setNoIndex(boolean noIndex) {
 
     }
 
     @Override
-    public void setNoFollow(final boolean noFollow) {
+    public void setNoFollow(boolean noFollow) {
 
     }
 
     @Override
-    public void setNoArchive(final boolean noArchive) {
+    public void setNoArchive(boolean noArchive) {
 
     }
 
     @Override
-    public void setDisplayUrl(final URI displayUrl) {
+    public void setDisplayUrl(URI displayUrl) {
 
     }
 
     @Override
-    public void setCrawlOnce(final boolean crawlOnce) {
+    public void setCrawlOnce(boolean crawlOnce) {
 
     }
 
     @Override
-    public void setLock(final boolean lock) {
+    public void setLock(boolean lock) {
 
     }
 }

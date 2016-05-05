@@ -8,7 +8,7 @@ public class AdaptorProxyException extends RuntimeException {
      * Create a new AdaptorProxyException with a message.
      * @param message    The message of the exception.
      */
-    public AdaptorProxyException(final String message) {
+    public AdaptorProxyException(String message) {
         super(message);
     }
 
@@ -17,7 +17,7 @@ public class AdaptorProxyException extends RuntimeException {
      * @param message    The message of the exception.
      * @param cause      The cause of the exception.
      */
-    public AdaptorProxyException(final String message, final Throwable cause) {
+    public AdaptorProxyException(String message, Throwable cause) {
         super(message, cause);
     }
 
@@ -25,7 +25,7 @@ public class AdaptorProxyException extends RuntimeException {
      * Create a new AdaptorProxyException with a cause.
      * @param cause    The cause of the exception.
      */
-    public AdaptorProxyException(final Throwable cause) {
+    public AdaptorProxyException(Throwable cause) {
         super(cause);
     }
 }

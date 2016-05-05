@@ -15,15 +15,15 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class SitemapCache {
-    private Map<String, Map<String, SitemapEntry>> caches;
-    private Map<String, ReadWriteLock> readWriteLocks;
+    private final Map<String, Map<String, SitemapEntry>> caches;
+    private final Map<String, ReadWriteLock> readWriteLocks;
 
     public SitemapCache() {
         caches = new HashMap<>();
         readWriteLocks = new HashMap<>();
     }
 
-    public SitemapEntry getSitemapEntry(final String sitemapUrl, final String sitemapEntryUrl) {
+    public SitemapEntry getSitemapEntry(String sitemapUrl, String sitemapEntryUrl) {
         Map<String, SitemapEntry> cache = getCacheForUrl(sitemapUrl);
         ReadWriteLock readWriteLock = getReadWriteLockForUrl(sitemapUrl);
         if (cache.size() == 0) {
@@ -32,6 +32,7 @@ public class SitemapCache {
             try {
                 if (cache.size() == 0) {
                     SitemapParser sitemapParser = new SitemapParser();
+                    sitemapParser.setTimeout(180000);
                     Sitemap sitemap = sitemapParser.parseSitemap(sitemapUrl);
                     fillCache(cache, sitemap);
                 }
@@ -48,13 +49,14 @@ public class SitemapCache {
         }
     }
 
-    public Collection<SitemapEntry> getSitemapEntriesAfter(final String sitemapUrl, final Date minDate) {
+    public Collection<SitemapEntry> getSitemapEntriesAfter(String sitemapUrl, Date minDate) {
         Map<String, SitemapEntry> cache = getCacheForUrl(sitemapUrl);
         ReadWriteLock readWriteLock = getReadWriteLockForUrl(sitemapUrl);
         Lock writeLock = readWriteLock.writeLock();
         writeLock.lock();
         try {
             SitemapParser sitemapParser = new SitemapParser();
+            sitemapParser.setTimeout(180000);
             boolean alreadyAfterMinDate;
             Sitemap sitemap;
             if (cache.size() == 0) {
@@ -78,7 +80,7 @@ public class SitemapCache {
         }
     }
 
-    private void fillCache(final Map<String, SitemapEntry> cache, final Sitemap sitemap) {
+    private void fillCache(Map<String, SitemapEntry> cache, Sitemap sitemap) {
         for (SitemapEntry sitemapEntry : sitemap.getSitemapEntries()) {
             cache.put(sitemapEntry.getLoc(), sitemapEntry);
             if (sitemapEntry.getLinks() != null) {
@@ -89,7 +91,7 @@ public class SitemapCache {
         }
     }
 
-    private synchronized Map<String, SitemapEntry> getCacheForUrl(final String sitemapUrl) {
+    private synchronized Map<String, SitemapEntry> getCacheForUrl(String sitemapUrl) {
         Map<String, SitemapEntry> cache = this.caches.get(sitemapUrl);
         if (cache == null) {
             cache = new HashMap<>();
@@ -98,7 +100,7 @@ public class SitemapCache {
         return cache;
     }
 
-    private synchronized ReadWriteLock getReadWriteLockForUrl(final String sitemapUrl) {
+    private synchronized ReadWriteLock getReadWriteLockForUrl(String sitemapUrl) {
         ReadWriteLock readWriteLock = readWriteLocks.get(sitemapUrl);
         if (readWriteLock == null) {
             readWriteLock = new ReentrantReadWriteLock(true);

@@ -29,12 +29,12 @@ public class BrowserContentSource  extends AbstractContentSource {
     private Page page;
     private String locationHeader;
 
-    public BrowserContentSource(final PatternConfig config) {
+    public BrowserContentSource(PatternConfig config) {
         this.config = config;
     }
 
     @Override
-    public Status retrieveContent(final String url, final String cookieHeaderValue) throws IOException {
+    public Status retrieveContent(String url, String cookieHeaderValue) throws IOException {
         BrowserVersion browserVersion = getBrowserVersion(config.getUserAgent());
         try (WebClient webClient = createConfiguredWebClient(browserVersion)) {
             for (Map.Entry<String, String> requestHttpHeader : config.getRequestHeaders().entrySet()) {
@@ -69,7 +69,7 @@ public class BrowserContentSource  extends AbstractContentSource {
     }
 
     @Override
-    public Map<String, String> getHeaders() {
+    public Map<String, List<String>> getHeaders() {
         ensureRetrieveContentCalled();
         //Content-Length, Content-Encoding and Content-MD5 headers are removed in ResponseContentEncoding
         //(Apache httpclient) when content is compressed. These headers cannot be returned here.
@@ -97,7 +97,7 @@ public class BrowserContentSource  extends AbstractContentSource {
     }
 
     @Override
-    public void writeContent(final OutputStream outputStream) throws IOException {
+    public void writeContent(OutputStream outputStream) throws IOException {
         ensureRetrieveContentCalled();
         try (InputStream contentAsStream = page.getWebResponse().getContentAsStream()) {
             IOUtils.copy(contentAsStream, outputStream);
@@ -105,13 +105,14 @@ public class BrowserContentSource  extends AbstractContentSource {
     }
 
     @Override
-    public void writeImageAsPdf(final BufferedImage image, final OutputStream outputStream) throws IOException {
+    public void writeImageAsPdf(BufferedImage image, OutputStream outputStream) throws IOException {
         ensureRetrieveContentCalled();
         writeImageAsPdf(image, outputStream, page.getWebResponse().getContentType());
     }
 
     @Override
-    public void respondRedirect(final OutputStream outputStream) throws IOException {
+    public void respondRedirect(OutputStream outputStream) throws IOException {
+        ensureRetrieveContentCalled();
         String redirectHtml = getRedirectHtml(locationHeader);
         outputStream.write(redirectHtml.getBytes(StandardCharsets.UTF_8));
     }

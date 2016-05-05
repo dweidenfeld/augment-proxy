@@ -31,7 +31,7 @@ public abstract class AbstractContentSource implements ContentSource {
         return domain;
     }
 
-    public Map<String, String> parseCookieHeader(final String cookieHeaderValue) {
+    public Map<String, String> parseCookieHeader(String cookieHeaderValue) {
         Map<String, String> result = new LinkedHashMap<>();
         String[] cookiePairs = cookieHeaderValue.split(";");
         for (String cookiePair : cookiePairs) {
@@ -44,8 +44,7 @@ public abstract class AbstractContentSource implements ContentSource {
         return result;
     }
 
-    public void writeImageAsPdf(final BufferedImage image, final OutputStream outputStream, final String contentType)
-            throws IOException {
+    public void writeImageAsPdf(BufferedImage image, OutputStream outputStream, String contentType) throws IOException {
         PDDocument pdDocument  = new PDDocument();
         PDImageXObject pdImageXObject;
         String contentTypeLowerCase = contentType.toLowerCase(Locale.ENGLISH);

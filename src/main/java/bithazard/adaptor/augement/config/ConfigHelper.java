@@ -21,7 +21,11 @@ import java.util.logging.Logger;
 public final class ConfigHelper {
     private static final Logger LOGGER = Logger.getLogger(ConfigHelper.class.getName());
 
-    public static AdaptorConfig parseAdaptorConfig(final String adaptorConfigFilename) {
+    private ConfigHelper() {
+        throw new AssertionError("Instantiating utility class...");
+    }
+
+    public static AdaptorConfig parseAdaptorConfig(String adaptorConfigFilename) {
         AdaptorConfig.Builder adaptorConfigBuilder = new AdaptorConfig.Builder();
         JSONObject adaptorConfig = (JSONObject) parseJsonConfig(adaptorConfigFilename);
         if (adaptorConfig == null) {
@@ -209,8 +213,7 @@ public final class ConfigHelper {
                         extractConfigBuilder.cssSelector((String) extractConfigJsonObject.get("cssSelector"));
                         String regexMatch = (String) extractConfigJsonObject.get("regexMatch");
                         if (regexMatch != null) {
-                            extractConfigBuilder.regexMatch(
-                                    ExtractConfig.RegexMatch.valueOf(regexMatch.toUpperCase(Locale.ENGLISH)));
+                            extractConfigBuilder.regexMatch(ExtractConfig.RegexMatch.valueOf(regexMatch.toUpperCase(Locale.ENGLISH)));
                         }
                         String regexFind = (String) extractConfigJsonObject.get("regexFind");
                         if (regexFind != null) {
@@ -223,8 +226,7 @@ public final class ConfigHelper {
                         }
                         JSONArray metadataNames = (JSONArray) extractConfigJsonObject.get("metadataNames");
                         if (metadataNames != null) {
-                            String[] metadataNameStrings =
-                                    (String[]) metadataNames.toArray(new String[metadataNames.size()]);
+                            String[] metadataNameStrings = (String[]) metadataNames.toArray(new String[metadataNames.size()]);
                             extractConfigBuilder.metadataNames(Arrays.asList(metadataNameStrings));
                         }
                         extractConfigs.add(extractConfigBuilder.build());
@@ -238,7 +240,7 @@ public final class ConfigHelper {
         }
     }
 
-    private static Object parseJsonConfig(final String filename) {
+    private static Object parseJsonConfig(String filename) {
         InputStreamReader reader = null;
         try {
             reader = new InputStreamReader(new FileInputStream(filename), StandardCharsets.UTF_8);

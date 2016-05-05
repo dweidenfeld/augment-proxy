@@ -4,7 +4,7 @@ public final class FeedConfig {
     private final String url;
     private final boolean addMetadata;
 
-    public FeedConfig(final String url, final boolean addMetadata) {
+    public FeedConfig(String url, boolean addMetadata) {
         this.url = url;
         this.addMetadata = addMetadata;
     }
@@ -18,7 +18,7 @@ public final class FeedConfig {
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
