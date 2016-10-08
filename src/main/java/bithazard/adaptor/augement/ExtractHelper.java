@@ -99,7 +99,12 @@ public final class ExtractHelper {
                                             List<String> regexResults) {
         switch (extractConfig.getTarget()) {
             case TITLE: {
-                String title = regexResults.get(extractConfig.getTitleCssElement());
+                int titleCssElement = extractConfig.getTitleCssElement();
+                if (regexResults.isEmpty() || titleCssElement >= regexResults.size()) {
+                    LOGGER.warning("(" + requestUrl + ") Regex result was empty or titleCssElement was too large. Not setting title.");
+                    return;
+                }
+                String title = regexResults.get(titleCssElement);
                 if (title != null) {
                     document.title(title);
                 } else {

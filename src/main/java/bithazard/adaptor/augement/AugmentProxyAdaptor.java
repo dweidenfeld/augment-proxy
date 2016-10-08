@@ -28,6 +28,7 @@ import org.jsoup.nodes.Document;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -218,7 +219,7 @@ public class AugmentProxyAdaptor extends AbstractAdaptor implements PollingIncre
                     ImageLinkHelper.addImageLinksAsPdf(document, config.getImageLinkConfig(), config.isTlsTermination());
                     content = document.outerHtml();
                 }
-                IOUtils.write(content, response.getOutputStream());
+                IOUtils.write(content, response.getOutputStream(), StandardCharsets.UTF_8);
                 return;
             }
         }

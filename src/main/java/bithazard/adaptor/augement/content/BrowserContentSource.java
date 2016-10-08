@@ -1,5 +1,6 @@
 package bithazard.adaptor.augement.content;
 
+import bithazard.adaptor.augement.AugmentProxyException;
 import bithazard.adaptor.augement.HttpHeaderHelper;
 import bithazard.adaptor.augement.config.PatternConfig;
 import com.gargoylesoftware.htmlunit.BrowserVersion;
@@ -17,6 +18,8 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +27,7 @@ import java.util.logging.Logger;
 
 public class BrowserContentSource  extends AbstractContentSource {
     private static final Logger LOGGER = Logger.getLogger(BrowserContentSource.class.getName());
-    public static final BrowserVersion DEFAULT_BROWSER_VERSION = BrowserVersion.FIREFOX_38;
+    public static final BrowserVersion DEFAULT_BROWSER_VERSION = BrowserVersion.FIREFOX_45;
     private final PatternConfig config;
     private Page page;
     private String locationHeader;
@@ -87,6 +90,17 @@ public class BrowserContentSource  extends AbstractContentSource {
         } else {
             htmlContent = page.getWebResponse().getContentAsString();
         }
+        String charset = page.getWebResponse().getContentCharsetOrNull();
+        if (charset != null && !charset.equals("UTF-8") && Charset.isSupported(charset)) {
+            byte byteContent[];
+            try {
+                byteContent = htmlContent.getBytes(charset);
+            } catch (UnsupportedEncodingException e) {
+                throw new AugmentProxyException("Charset " + charset + " is not supported, although Charset.isSupported"
+                        + " returned true for this charset. This should not be possible.");
+            }
+            htmlContent = new String(byteContent, StandardCharsets.UTF_8);
+        }
         return htmlContent;
     }
 
@@ -128,7 +142,7 @@ public class BrowserContentSource  extends AbstractContentSource {
         if (userAgent.equals(DEFAULT_BROWSER_VERSION.getUserAgent())) {
             browserVersion = DEFAULT_BROWSER_VERSION;
         } else {
-            browserVersion = new BrowserVersion(userAgent, userAgent, userAgent, 0.0F);
+            browserVersion = new BrowserVersion(userAgent, userAgent, userAgent, 0);
         }
         return browserVersion;
     }
@@ -136,7 +150,7 @@ public class BrowserContentSource  extends AbstractContentSource {
     private static WebClient createConfiguredWebClient(BrowserVersion browserVersion) {
         WebClient webClient = new WebClient(browserVersion);
         webClient.getOptions().setRedirectEnabled(false);
-        webClient.getOptions().setTimeout(180);
+        webClient.getOptions().setTimeout(180000);
         webClient.getOptions().setThrowExceptionOnScriptError(false);
         webClient.getOptions().setCssEnabled(false);
         webClient.getOptions().setJavaScriptEnabled(true);
