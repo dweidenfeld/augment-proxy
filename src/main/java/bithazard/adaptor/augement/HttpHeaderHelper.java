@@ -18,6 +18,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -108,6 +109,11 @@ public final class HttpHeaderHelper {
             List<String> existingHeaderValues = headers.get(headerToMetadata.getKey());
             if (existingHeaderValues != null) {
                 for (String existingHeaderValue : existingHeaderValues) {
+                    if ("Content-Disposition".equalsIgnoreCase(headerToMetadata.getKey())) {
+                        existingHeaderValue = new String(
+                                existingHeaderValue.getBytes(StandardCharsets.ISO_8859_1),
+                                StandardCharsets.UTF_8);
+                    }
                     response.addMetadata(headerToMetadata.getValue(), existingHeaderValue);
                 }
             }
